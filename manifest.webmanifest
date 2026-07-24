@@ -1,0 +1,15 @@
+{
+  "name": "BirdDex — Bird Pokedex",
+  "short_name": "BirdDex",
+  "description": "A retro Game Boy style pokedex for the birds of Alberta & BC.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#9bbc0f",
+  "theme_color": "#0f380f",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect x="16" y="16" width="480" height="480" rx="72" fill="#9bbc0f"/>
+  <rect x="16" y="16" width="480" height="480" rx="72" fill="none" stroke="#0f380f" stroke-width="24"/>
+  <rect x="70" y="70" width="372" height="372" rx="40" fill="none" stroke="#8bac0f" stroke-width="10"/>
+  <!-- songbird silhouette (scaled from the in-app shape) -->
+  <g fill="#0f380f" transform="translate(120,120) scale(4)">
+    <ellipse cx="30" cy="34" rx="14" ry="11"/>
+    <circle cx="42" cy="24" r="8"/>
+    <polygon points="50,24 61,22 50,28"/>
+    <polygon points="16,30 3,19 20,41"/>
+    <rect x="26" y="44" width="2.5" height="11"/>
+    <rect x="34" y="44" width="2.5" height="11"/>
+  </g>
+</svg>

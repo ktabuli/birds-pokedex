@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f380f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BirdDex" />
+  <title>BirdDex</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- The whole app is drawn inside a "handheld" shell for the retro feel -->
+  <div id="device">
+    <header id="topbar">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span class="brand-name">BIRD&middot;DEX</span>
+      </div>
+      <button id="cityBtn" class="pill" aria-haspopup="dialog">
+        <span id="cityLabel">Calgary</span> <span class="caret">&#9662;</span>
+      </button>
+    </header>
+
+    <!-- Dex completion progress bar -->
+    <div id="progressWrap">
+      <div id="progressBar"><div id="progressFill"></div></div>
+      <div id="progressText">0 / 0 spotted</div>
+    </div>
+
+    <!-- Rarity filter chips -->
+    <nav id="filters" aria-label="Filter by rarity">
+      <button class="chip active" data-filter="all">ALL</button>
+      <button class="chip" data-filter="common">COMMON</button>
+      <button class="chip" data-filter="uncommon">UNCOMMON</button>
+      <button class="chip" data-filter="rare">RARE</button>
+      <button class="chip" data-filter="legendary">LEGENDARY</button>
+      <button class="chip" data-filter="seen">SPOTTED</button>
+    </nav>
+
+    <!-- The dex grid -->
+    <main id="screen">
+      <div id="grid"></div>
+      <p id="emptyState" hidden>No birds match this filter.</p>
+    </main>
+
+    <!-- Decorative control cluster (non-functional, pure vibes) -->
+    <footer id="controls" aria-hidden="true">
+      <div class="dpad"><span></span><span></span><span></span><span></span><span class="dpad-center"></span></div>
+      <div class="ab"><span class="btn-b">B</span><span class="btn-a">A</span></div>
+    </footer>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Bird detail / log a sighting -->
+  <div class="modal" id="birdModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mName">
+      <button class="modal-close" data-close>&times;</button>
+      <div class="detail-art"><div id="mArt" class="detail-silhouette"></div></div>
+      <div class="detail-body">
+        <div class="detail-head">
+          <h2 id="mName">Bird</h2>
+          <span id="mRarity" class="badge">COMMON</span>
+        </div>
+        <p id="mSci" class="sci">Scientific name</p>
+        <p id="mBlurb" class="blurb">Field note.</p>
+
+        <div id="mTally" class="tally">Seen 0 times</div>
+
+        <div id="mSightings" class="sightings"></div>
+
+        <button id="logBtn" class="big-btn">+ LOG A SIGHTING</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log form (photo / location / notes) -->
+  <div class="modal" id="logModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 id="logTitle">New Sighting</h2>
+      <p id="logFor" class="sci"></p>
+
+      <label class="field">
+        <span class="field-label">PHOTO</span>
+        <input type="file" id="photoInput" accept="image/*" capture="environment" />
+        <div id="photoPreview" class="photo-preview" hidden><img id="photoImg" alt="sighting photo preview" /></div>
+      </label>
+
+      <div class="field">
+        <span class="field-label">WHERE</span>
+        <button id="geoBtn" type="button" class="mini-btn">&#9678; USE MY LOCATION</button>
+        <div id="geoStatus" class="geo-status">Location not added</div>
+      </div>
+
+      <label class="field">
+        <span class="field-label">NOTES <em>(optional)</em></span>
+        <textarea id="notesInput" rows="2" placeholder="Behaviour, weather, anything&hellip;"></textarea>
+      </label>
+
+      <div class="field-label auto">&#9200; Date &amp; time added automatically</div>
+
+      <button id="saveSighting" class="big-btn">SAVE</button>
+    </div>
+  </div>
+
+  <!-- City picker + add city -->
+  <div class="modal" id="cityModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="cityTitle">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 id="cityTitle">Choose a City</h2>
+      <ul id="cityList" class="city-list"></ul>
+      <button id="addCityBtn" class="big-btn ghost">+ ADD A CITY</button>
+    </div>
+  </div>
+
+  <!-- Add city form -->
+  <div class="modal" id="addCityModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addCityTitle">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 id="addCityTitle">Add a City</h2>
+
+      <label class="field">
+        <span class="field-label">CITY NAME</span>
+        <input type="text" id="newCityName" placeholder="e.g. Kelowna" maxlength="40" />
+      </label>
+
+      <div class="field">
+        <span class="field-label">PROVINCE</span>
+        <div class="seg" id="provSeg">
+          <button type="button" class="seg-btn active" data-prov="AB">ALBERTA</button>
+          <button type="button" class="seg-btn" data-prov="BC">BRITISH COLUMBIA</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">HABITATS <em>(pick any)</em></span>
+        <div id="habitatChecks" class="habitat-checks"></div>
+      </div>
+
+      <div id="addCityCount" class="geo-status">0 birds match</div>
+      <button id="saveCity" class="big-btn">CREATE CITY</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="data/species.js"></script>
+  <script src="data/cities.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
