@@ -19,6 +19,27 @@ const SHAPES = {
 };
 const shapeSVG = (s) => SHAPES[s] || SHAPES.songbird;
 
+/* tiny monochrome icons for the weather / behaviour pickers (24x24, fill = text color) */
+const TAG_ICONS = {
+  Sunny: '<circle cx="12" cy="12" r="4.6"/><rect x="11" y="0" width="2" height="4"/><rect x="11" y="20" width="2" height="4"/><rect x="0" y="11" width="4" height="2"/><rect x="20" y="11" width="4" height="2"/><rect x="3" y="3" width="3" height="3"/><rect x="18" y="3" width="3" height="3"/><rect x="3" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>',
+  Cloudy: '<circle cx="7" cy="7" r="3.4"/><rect x="6" y="0.5" width="2" height="3"/><rect x="0.5" y="6" width="3" height="2"/><circle cx="9" cy="15" r="4"/><circle cx="14" cy="13" r="5"/><circle cx="18" cy="16" r="3"/><rect x="7" y="15" width="13" height="5" rx="2.5"/>',
+  Overcast: '<circle cx="7" cy="10" r="4"/><circle cx="13" cy="8" r="5.5"/><circle cx="18" cy="11" r="4"/><rect x="4" y="11" width="16" height="6" rx="3"/><circle cx="9" cy="17" r="3.4"/><circle cx="15" cy="17" r="3.4"/>',
+  Rainy: '<circle cx="8" cy="8" r="3.4"/><circle cx="13" cy="6" r="4.4"/><circle cx="17" cy="9" r="3"/><rect x="6" y="9" width="13" height="4" rx="2"/><rect x="8" y="16" width="1.8" height="5" rx="0.9"/><rect x="12" y="17" width="1.8" height="5" rx="0.9"/><rect x="16" y="16" width="1.8" height="5" rx="0.9"/>',
+  Snowy: '<circle cx="8" cy="8" r="3.4"/><circle cx="13" cy="6" r="4.4"/><circle cx="17" cy="9" r="3"/><rect x="6" y="9" width="13" height="4" rx="2"/><circle cx="9" cy="18" r="1.5"/><circle cx="13" cy="19.5" r="1.5"/><circle cx="17" cy="18" r="1.5"/>',
+  Windy: '<rect x="2" y="6" width="13" height="2.6" rx="1.3"/><rect x="12.6" y="6" width="2.6" height="5" rx="1.3"/><rect x="2" y="11" width="17" height="2.6" rx="1.3"/><rect x="16.4" y="11" width="2.6" height="5" rx="1.3"/><rect x="2" y="16" width="10" height="2.6" rx="1.3"/>',
+  Foggy: '<rect x="2" y="5" width="19" height="2.4" rx="1.2"/><rect x="4" y="9.5" width="16" height="2.4" rx="1.2"/><rect x="2" y="14" width="19" height="2.4" rx="1.2"/><rect x="4" y="18.5" width="15" height="2.4" rx="1.2"/>',
+
+  Perched: '<rect x="2" y="18" width="20" height="2.2" rx="1.1"/><ellipse cx="11" cy="11" rx="5" ry="4"/><circle cx="15.5" cy="8" r="2.6"/><polygon points="18,8 21.5,7 18,9.6"/><polygon points="6,10 1.5,7 7,13"/><rect x="9" y="14.5" width="1.5" height="3.5"/><rect x="12.5" y="14.5" width="1.5" height="3.5"/>',
+  Flying: '<path d="M2 15 C6 8 9 8 12 14 C15 8 18 8 22 15 C18 12 15 12 12 16 C9 12 6 12 2 15 Z"/>',
+  Soaring: '<path d="M2 12 L11 10.4 L12 5 L13 10.4 L22 12 L13 13 L12 19 L11 13 Z"/>',
+  Feeding: '<polygon points="6,7 1.5,5 7,10"/><ellipse cx="10" cy="9" rx="4.5" ry="3.6"/><circle cx="13.5" cy="12.5" r="2.5"/><polygon points="12.9,15 14,19.5 15.6,15"/><circle cx="14.5" cy="21" r="1.6"/>',
+  Singing: '<polygon points="4,12 1,10 5,15"/><ellipse cx="8" cy="13" rx="4.5" ry="3.6"/><circle cx="11.6" cy="10" r="2.6"/><polygon points="14,9.5 17.5,9 14,11.5"/><circle cx="18" cy="18" r="2.3"/><rect x="19.4" y="7.5" width="1.6" height="10.5"/><path d="M21 7.5 q3 0.6 2.2 4 q-0.4 -1.8 -2.2 -1.4 z"/>',
+  Nesting: '<circle cx="9.5" cy="11" r="2.3"/><circle cx="14.5" cy="11" r="2.3"/><path d="M3 12 a9 6 0 0 0 18 0 a9 3.4 0 0 1 -18 0 z"/>',
+  Swimming: '<rect x="1" y="17" width="22" height="2.4" rx="1.2"/><polygon points="5,11 1.5,9 6,14"/><ellipse cx="11" cy="13" rx="6" ry="3.2"/><circle cx="16.5" cy="9.5" r="2.7"/><rect x="18.5" y="8.7" width="4.2" height="2.1" rx="1"/>',
+  Foraging: '<rect x="1" y="19" width="22" height="2" rx="1"/><polygon points="6,7 2,5 7,10"/><ellipse cx="10" cy="10" rx="4" ry="4.6"/><circle cx="12.8" cy="14" r="2.3"/><polygon points="12.4,16 13.4,19 14.6,16"/><rect x="9" y="15.5" width="1.4" height="3.5"/><rect x="11.6" y="15.5" width="1.4" height="3.5"/><circle cx="4" cy="18" r="1"/><circle cx="18.5" cy="18" r="1"/>'
+};
+const tagIcon = (name) => `<svg class="tag-ic" viewBox="0 0 24 24" aria-hidden="true">${TAG_ICONS[name] || ''}</svg>`;
+
 const RARITY_ORDER = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
 
 /* pick-and-choose options for a sighting */
@@ -217,7 +238,7 @@ function openBird(sp) {
         <div class="when">${fmtDate(s.ts)}</div>
         ${s.cityName ? `<div class="where">@ ${esc(s.cityName)}</div>` : ''}
         ${s.geo ? `<div class="where">&#9678; ${s.geo.lat.toFixed(4)}, ${s.geo.lng.toFixed(4)}</div>` : ''}
-        ${(s.behaviour || s.weather) ? `<div class="s-tags">${[...(s.behaviour || []), ...(s.weather || [])].map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+        ${(s.behaviour || s.weather) ? `<div class="s-tags">${[...(s.behaviour || []), ...(s.weather || [])].map(t => `<span>${tagIcon(t)}${esc(t)}</span>`).join('')}</div>` : ''}
         ${s.notes ? `<div class="note">&ldquo;${esc(s.notes)}&rdquo;</div>` : ''}
       </div>
       <button class="del" data-sid="${s.id}" title="Delete">&times;</button>
@@ -257,7 +278,7 @@ function renderTagRow(containerSel, opts, key) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'tag';
-    b.textContent = opt;
+    b.innerHTML = tagIcon(opt) + `<span>${opt}</span>`;
     b.addEventListener('click', () => {
       const arr = state.pending[key];
       const i = arr.indexOf(opt);
@@ -370,7 +391,7 @@ function openIdentify(s) {
     <div>${fmtDate(s.ts)}</div>
     ${s.cityName ? `<div>@ ${esc(s.cityName)}</div>` : ''}
     ${s.geo ? `<div>&#9678; ${s.geo.lat.toFixed(4)}, ${s.geo.lng.toFixed(4)}</div>` : ''}
-    ${tags.length ? `<div class="s-tags">${tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+    ${tags.length ? `<div class="s-tags">${tags.map(t => `<span>${tagIcon(t)}${esc(t)}</span>`).join('')}</div>` : ''}
     ${s.notes ? `<div>&ldquo;${esc(s.notes)}&rdquo;</div>` : ''}`;
   $('#idSpeciesSelect').value = '';
   showModal('#identifyModal');

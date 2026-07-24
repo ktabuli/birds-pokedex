@@ -34,20 +34,25 @@ html, body {
   -webkit-font-smoothing: none;
   image-rendering: pixelated;
   overscroll-behavior: none;
+  overflow: hidden;              /* the page never scrolls — only the screen does */
 }
 
-/* ---------- device shell ---------- */
+/* ---------- device shell: locked to the viewport like a real handheld ---------- */
 #device {
   max-width: 480px;
   margin: 0 auto;
-  min-height: 100%;
+  height: 100vh;
+  height: 100dvh;                /* fill the viewport exactly, no page scroll */
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: linear-gradient(160deg, var(--shell) 0%, var(--shell-dark) 100%);
   padding: env(safe-area-inset-top) 10px 10px;
   border-left: 3px solid #6f6a68;
   border-right: 3px solid #6f6a68;
 }
+/* everything except the screen keeps its size; the screen takes the rest and scrolls */
+#topbar, #progressWrap, .log-cta, #filters, #controls { flex: none; }
 
 /* ---------- top bar ---------- */
 #topbar {
@@ -131,13 +136,14 @@ html, body {
 /* ---------- the screen (dex grid) ---------- */
 #screen {
   flex: 1;
+  min-height: 0;                 /* allow the flex child to shrink so it scrolls, not the page */
   background: var(--g3);
   border: 4px solid var(--g0);
   border-radius: 6px;
   box-shadow: inset 0 0 0 3px var(--g2), inset 0 0 22px #6b8f0f;
   padding: 10px;
   overflow-y: auto;
-  min-height: 40vh;
+  -webkit-overflow-scrolling: touch;
 }
 #grid {
   display: grid;
@@ -357,8 +363,12 @@ input[type=file] { padding: 7px; font-size: 7px; }
   background: var(--g3); color: var(--g0);
   border: 2px solid var(--g0); border-radius: 2px;
   padding: 7px 8px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
 }
 .tag.on { background: var(--g0); color: var(--g3); }
+.tag-ic { width: 13px; height: 13px; fill: currentColor; flex: none; display: block; }
+.s-tags span { display: inline-flex; align-items: center; gap: 3px; }
+.s-tags .tag-ic { width: 9px; height: 9px; }
 .geo-status { font-size: 8px; color: var(--g1); margin-top: 6px; }
 .geo-status.ok { color: var(--g0); }
 
