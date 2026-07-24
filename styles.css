@@ -52,7 +52,7 @@ html, body {
   border-right: 3px solid #6f6a68;
 }
 /* everything except the screen keeps its size; the screen takes the rest and scrolls */
-#topbar, #progressWrap, .log-cta, #filters, #controls { flex: none; }
+#topbar, #progressWrap, .log-cta, #filters, #dexControls, #controls { flex: none; }
 
 /* ---------- top bar ---------- */
 #topbar {
@@ -81,10 +81,34 @@ html, body {
   padding: 7px 9px;
   cursor: pointer;
   display: flex; align-items: center; gap: 6px;
-  max-width: 55%;
 }
-.pill #cityLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill #cityLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 108px; }
 .caret { font-size: 8px; }
+.top-actions { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; }
+#cityBtn { min-width: 0; }
+.icon-pill { padding: 7px 9px; font-size: 12px; flex: none; }
+
+/* search + sort row */
+#dexControls { display: flex; gap: 6px; padding: 0 4px 8px; }
+#searchInput {
+  flex: 1; min-width: 0;
+  font-family: var(--font); font-size: 9px;
+  background: var(--g3); color: var(--g0);
+  border: 2px solid var(--g0); border-radius: 2px;
+  padding: 8px 9px;
+}
+#searchInput::placeholder { color: var(--g1); }
+#sortSelect {
+  flex: none; width: auto;
+  font-family: var(--font); font-size: 8px;
+  background: var(--g0); color: var(--g3);
+  border: 2px solid var(--g0); border-radius: 2px;
+  padding: 8px 22px 8px 8px;
+  -webkit-appearance: none; appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--g3) 50%), linear-gradient(135deg, var(--g3) 50%, transparent 50%);
+  background-position: calc(100% - 12px) 14px, calc(100% - 8px) 14px;
+  background-size: 4px 4px, 4px 4px; background-repeat: no-repeat;
+}
 
 /* ---------- progress ---------- */
 #progressWrap { padding: 0 4px 6px; }
@@ -359,6 +383,10 @@ html, body {
   background: repeating-linear-gradient(45deg, var(--g0) 0 6px, #0a260a 6px 12px);
   color: var(--g3); border-color: var(--g0);
 }
+
+/* menu / backup dialog */
+.menu-note { font-size: 8px; line-height: 1.7; color: var(--g1); margin: 12px 2px 8px; }
+.menu-meta { font-size: 8px; color: var(--g1); text-align: center; margin-top: 6px; }
 
 /* confirm dialog */
 .gb-dialog { max-width: 340px; }

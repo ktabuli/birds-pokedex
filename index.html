@@ -22,9 +22,12 @@
         <span class="brand-name">BIRD&middot;DEX</span>
         <span class="brand-ver" id="appVer"></span>
       </div>
-      <button id="cityBtn" class="pill" aria-haspopup="dialog">
-        <span id="cityLabel">Calgary</span> <span class="caret">&#9662;</span>
-      </button>
+      <div class="top-actions">
+        <button id="menuBtn" class="pill icon-pill" aria-label="Menu" aria-haspopup="dialog">&#9776;</button>
+        <button id="cityBtn" class="pill" aria-haspopup="dialog">
+          <span id="cityLabel">Calgary</span> <span class="caret">&#9662;</span>
+        </button>
+      </div>
     </header>
 
     <!-- Dex completion progress bar -->
@@ -46,6 +49,18 @@
       <button class="chip" data-filter="seen">SPOTTED</button>
       <button class="chip" data-filter="unknown" id="unknownChip">TO ID</button>
     </nav>
+
+    <!-- Search + sort the dex -->
+    <div id="dexControls">
+      <input type="search" id="searchInput" placeholder="Search birds…" autocomplete="off" />
+      <select id="sortSelect" aria-label="Sort birds">
+        <option value="dex">Dex order</option>
+        <option value="az">A–Z</option>
+        <option value="rarity-desc">Rarest first</option>
+        <option value="unseen">Unseen first</option>
+        <option value="seen">Spotted first</option>
+      </select>
+    </div>
 
     <!-- The dex grid -->
     <main id="screen">
@@ -173,6 +188,19 @@
 
       <div id="addCityCount" class="geo-status">0 birds match</div>
       <button id="saveCity" class="big-btn">CREATE CITY</button>
+    </div>
+  </div>
+
+  <!-- Menu: backup / restore -->
+  <div class="modal" id="menuModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 id="menuTitle" class="sheet-title">Menu</h2>
+      <button id="exportBtn" class="big-btn">&#8681; BACK UP MY BIRDS</button>
+      <button id="importBtn" class="big-btn ghost">&#8679; RESTORE FROM BACKUP</button>
+      <input type="file" id="importInput" accept="application/json,.json" hidden />
+      <p class="menu-note">Backup saves all your sightings, custom birds and cities to a file you can keep or send to a new phone. Restoring merges that file back in &mdash; it never deletes what you already have.</p>
+      <div class="menu-meta">BirdDex <span id="menuVer"></span></div>
     </div>
   </div>
 

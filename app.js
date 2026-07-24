@@ -6,7 +6,7 @@
 
 /* bump this whenever we ship — it shows in the top bar so we can confirm a
    phone actually received the latest deploy */
-const APP_VERSION = 'v0.9';
+const APP_VERSION = 'v0.10';
 
 /* ---------- bird silhouettes (filled shapes, colored via CSS) ---------- */
 const SHAPES = {
@@ -124,7 +124,9 @@ const state = {
   sightings: [],       // all sightings
   seen: new Set(),     // speciesIds with >=1 sighting
   tally: {},           // speciesId -> count
-  pending: null        // sighting being composed { speciesId, photo, geo, ... }
+  pending: null,       // sighting being composed { speciesId, photo, geo, ... }
+  search: '',          // dex search text
+  sort: 'dex'          // dex | az | rarity-desc | unseen | seen
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -157,30 +159,44 @@ function recomputeSightings() {
    Rendering
    ============================================================ */
 function render() {
-  const members = cityMembers(state.current);
   const grid = $('#grid');
+  const members = cityMembers(state.current);     // canonical (dex) order
+  const numById = {};
+  members.forEach((s, i) => { numById[s.id] = i + 1; });   // stable dex numbers
 
   const seenCount = members.filter(s => state.seen.has(s.id)).length;
   const unknownCount = unknownSightings().length;
   $('#progressFill').style.width = members.length ? (seenCount / members.length * 100) + '%' : '0%';
   $('#progressText').textContent = `${seenCount} / ${members.length} spotted`
     + (unknownCount ? ` · ${unknownCount} to ID` : '');
-
-  // keep the "TO ID" chip label showing how many are waiting
   $('#unknownChip').textContent = unknownCount ? `TO ID (${unknownCount})` : 'TO ID';
 
   if (state.filter === 'unknown') { renderUnknown(); return; }
 
+  // rarity / spotted filter
+  let list = members.slice();
+  if (state.filter === 'seen') list = list.filter(s => state.seen.has(s.id));
+  else if (state.filter !== 'all') list = list.filter(s => s.rarity === state.filter);
+
+  // search by name
+  const q = state.search.trim().toLowerCase();
+  if (q) list = list.filter(s => s.name.toLowerCase().includes(q));
+
+  // display sort (dex numbers stay canonical regardless)
+  const rank = s => RARITY_ORDER[s.rarity];
+  const seenOf = s => state.seen.has(s.id) ? 1 : 0;
+  const byName = (a, b) => a.name.localeCompare(b.name);
+  if (state.sort === 'az') list.sort(byName);
+  else if (state.sort === 'rarity-desc') list.sort((a, b) => (rank(b) - rank(a)) || byName(a, b));
+  else if (state.sort === 'unseen') list.sort((a, b) => (seenOf(a) - seenOf(b)) || (numById[a.id] - numById[b.id]));
+  else if (state.sort === 'seen') list.sort((a, b) => (seenOf(b) - seenOf(a)) || (numById[a.id] - numById[b.id]));
+
   grid.innerHTML = '';
-  let list = members;
-  if (state.filter === 'seen') list = members.filter(s => state.seen.has(s.id));
-  else if (state.filter !== 'all') list = members.filter(s => s.rarity === state.filter);
-
   $('#emptyState').hidden = list.length !== 0;
-  $('#emptyState').textContent = 'No birds match this filter.';
+  $('#emptyState').textContent = q ? `No birds match “${state.search.trim()}”.` : 'No birds match this filter.';
 
-  members.forEach((sp, i) => {
-    if (!list.includes(sp)) return;
+  list.forEach(sp => {
+    const i = numById[sp.id];
     const seen = state.seen.has(sp.id);
     const n = state.tally[sp.id] || 0;
     const photo = state.photoBySpecies[sp.id];
@@ -190,7 +206,7 @@ function render() {
       ? `<span class="art photo"><img src="${photo.url}" alt="" /></span>`
       : `<span class="art">${shapeSVG(sp.shape)}</span>`;
     card.innerHTML = `
-      <span class="num">#${String(i + 1).padStart(2, '0')}</span>
+      <span class="num">#${String(i).padStart(2, '0')}</span>
       ${seen && n > 0 ? `<span class="tally-badge">x${n}</span>` : ''}
       ${art}
       <span class="cname">${seen ? sp.name : '??????'}</span>
@@ -199,9 +215,8 @@ function render() {
     grid.appendChild(card);
   });
 
-  // ALL also shows the not-yet-identified birds, after a divider, so a logged
-  // sighting is never hidden. (Rarity/SPOTTED filters stay species-only.)
-  if (state.filter === 'all' && unknownCount) {
+  // ALL also shows the not-yet-identified birds (hidden while searching)
+  if (state.filter === 'all' && unknownCount && !q) {
     const div = document.createElement('div');
     div.className = 'grid-divider';
     div.textContent = `TO IDENTIFY (${unknownCount})`;
@@ -209,6 +224,9 @@ function render() {
     unknownSightings().forEach(s => grid.appendChild(unknownCard(s)));
   }
 }
+
+$('#searchInput').addEventListener('input', (e) => { state.search = e.target.value; render(); });
+$('#sortSelect').addEventListener('change', (e) => { state.sort = e.target.value; render(); });
 
 /* a single "unidentified sighting" card (used in ALL and the TO ID tray) */
 function unknownCard(s) {
@@ -636,6 +654,59 @@ $$('.modal').forEach(m =>
   m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; }));
 
 $('#cityBtn').addEventListener('click', () => { renderCityList(); showModal('#cityModal'); });
+
+/* ---------- menu: backup / restore ---------- */
+$('#menuBtn').addEventListener('click', () => { $('#menuVer').textContent = APP_VERSION; showModal('#menuModal'); });
+
+function exportData() {
+  const data = {
+    app: 'birddex', version: 1, exportedAt: new Date().toISOString(),
+    sightings: state.sightings,
+    species: window.SPECIES.filter(s => s.custom),
+    cities: state.cities.filter(c => c.custom)
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `birddex-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  const n = state.sightings.length;
+  toast(`Backup saved — ${n} sighting${n === 1 ? '' : 's'}`);
+}
+
+async function importData(file) {
+  let data;
+  try { data = JSON.parse(await file.text()); }
+  catch { toast("That file isn't a valid backup"); return; }
+  if (!data || data.app !== 'birddex') { toast("That doesn't look like a BirdDex backup"); return; }
+  for (const sp of (data.species || [])) {
+    if (!window.SPECIES.find(x => x.id === sp.id)) { window.SPECIES.push(sp); await DB.put('species', sp); }
+  }
+  for (const c of (data.cities || [])) {
+    if (!state.cities.find(x => x.id === c.id)) { state.cities.push(c); await DB.put('cities', c); }
+  }
+  let added = 0;
+  for (const s of (data.sightings || [])) {
+    if (!state.sightings.find(x => x.id === s.id)) { state.sightings.push(s); await DB.put('sightings', s); added++; }
+  }
+  populateSelects();
+  recomputeSightings();
+  render();
+  hideModal('#menuModal');
+  toast(`Restored — ${added} new sighting${added === 1 ? '' : 's'} added`);
+}
+
+$('#exportBtn').addEventListener('click', exportData);
+$('#importBtn').addEventListener('click', () => $('#importInput').click());
+$('#importInput').addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (f) importData(f);
+  e.target.value = '';
+});
 
 $$('.chip').forEach(chip => chip.addEventListener('click', () => {
   $$('.chip').forEach(c => c.classList.remove('active'));
