@@ -154,11 +154,12 @@ function render() {
   const grid = $('#grid');
 
   const seenCount = members.filter(s => state.seen.has(s.id)).length;
+  const unknownCount = unknownSightings().length;
   $('#progressFill').style.width = members.length ? (seenCount / members.length * 100) + '%' : '0%';
-  $('#progressText').textContent = `${seenCount} / ${members.length} spotted`;
+  $('#progressText').textContent = `${seenCount} / ${members.length} spotted`
+    + (unknownCount ? ` · ${unknownCount} to ID` : '');
 
   // keep the "TO ID" chip label showing how many are waiting
-  const unknownCount = state.sightings.filter(s => !s.speciesId).length;
   $('#unknownChip').textContent = unknownCount ? `TO ID (${unknownCount})` : 'TO ID';
 
   if (state.filter === 'unknown') { renderUnknown(); return; }
@@ -190,28 +191,45 @@ function render() {
     card.addEventListener('click', () => openBird(sp));
     grid.appendChild(card);
   });
+
+  // ALL also shows the not-yet-identified birds, after a divider, so a logged
+  // sighting is never hidden. (Rarity/SPOTTED filters stay species-only.)
+  if (state.filter === 'all' && unknownCount) {
+    const div = document.createElement('div');
+    div.className = 'grid-divider';
+    div.textContent = `TO IDENTIFY (${unknownCount})`;
+    grid.appendChild(div);
+    unknownSightings().forEach(s => grid.appendChild(unknownCard(s)));
+  }
+}
+
+/* a single "unidentified sighting" card (used in ALL and the TO ID tray) */
+function unknownCard(s) {
+  const card = document.createElement('button');
+  card.className = 'card unknown';
+  const art = s.photo
+    ? `<span class="art photo"><img src="${s.photo}" alt="" /></span>`
+    : `<span class="art qmark">?</span>`;
+  card.innerHTML = `
+    ${art}
+    <span class="cname">Unidentified</span>
+    <span class="mini-date">${fmtDate(s.ts).split(' · ')[0]}</span>`;
+  card.addEventListener('click', () => openIdentify(s));
+  return card;
+}
+
+function unknownSightings() {
+  return state.sightings.filter(s => !s.speciesId).sort((a, b) => b.ts - a.ts);
 }
 
 /* the "TO ID" tray: sightings logged without a species */
 function renderUnknown() {
   const grid = $('#grid');
   grid.innerHTML = '';
-  const unknown = state.sightings.filter(s => !s.speciesId).sort((a, b) => b.ts - a.ts);
+  const unknown = unknownSightings();
   $('#emptyState').hidden = unknown.length !== 0;
   $('#emptyState').textContent = 'Nothing to identify — every sighting has a name. ★';
-  unknown.forEach(s => {
-    const card = document.createElement('button');
-    card.className = 'card unknown';
-    const art = s.photo
-      ? `<span class="art photo"><img src="${s.photo}" alt="" /></span>`
-      : `<span class="art qmark">?</span>`;
-    card.innerHTML = `
-      ${art}
-      <span class="cname">Unidentified</span>
-      <span class="mini-date">${fmtDate(s.ts).split(' · ')[0]}</span>`;
-    card.addEventListener('click', () => openIdentify(s));
-    grid.appendChild(card);
-  });
+  unknown.forEach(s => grid.appendChild(unknownCard(s)));
 }
 
 /* ---------- bird detail modal ---------- */

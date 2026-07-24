@@ -203,6 +203,14 @@ html, body {
   border: 2px dashed var(--g1); border-radius: 4px; box-sizing: border-box;
 }
 .card .mini-date { font-size: 6px; color: var(--g1); margin-top: 2px; }
+
+/* full-width divider that separates identified species from the "to ID" birds */
+.grid-divider {
+  grid-column: 1 / -1;
+  font-size: 8px; color: var(--g1); letter-spacing: 1px; text-align: center;
+  border-top: 2px dashed var(--g1);
+  margin-top: 6px; padding-top: 8px;
+}
 .card .cname {
   font-size: 7px; line-height: 1.35;
   color: var(--g0);
