@@ -262,7 +262,9 @@ function openBird(sp) {
       <button class="del" data-sid="${s.id}" title="Delete">&times;</button>
     </div>`).join('');
   wrap.querySelectorAll('.del').forEach(b =>
-    b.addEventListener('click', () => deleteSighting(b.dataset.sid, sp)));
+    b.addEventListener('click', async () => {
+      if (await gbConfirm('Delete this sighting? This cannot be undone.')) deleteSighting(b.dataset.sid, sp);
+    }));
 
   $('#logBtn').onclick = () => openLog(sp);
   showModal('#birdModal');
@@ -431,7 +433,7 @@ $('#saveId').addEventListener('click', async () => {
 
 $('#deleteUnknown').addEventListener('click', async () => {
   if (!identifyTarget) return;
-  if (!confirm('Delete this sighting for good?')) return;
+  if (!(await gbConfirm('Delete this sighting for good?'))) return;
   await DB.del('sightings', identifyTarget.id);
   state.sightings = state.sightings.filter(x => x.id !== identifyTarget.id);
   recomputeSightings();
@@ -477,7 +479,7 @@ async function selectCity(city) {
 }
 
 async function removeCity(city) {
-  if (!confirm(`Remove ${city.name}? (Your bird sightings are kept.)`)) return;
+  if (!(await gbConfirm(`Remove ${city.name}? Your bird sightings are kept.`, { yes: 'REMOVE' }))) return;
   await DB.del('cities', city.id);
   state.cities = state.cities.filter(c => c.id !== city.id);
   if (state.current.id === city.id) await selectCity(state.cities[0]);
@@ -545,6 +547,24 @@ $('#saveCity').addEventListener('click', async () => {
    ============================================================ */
 function showModal(sel) { $(sel).hidden = false; }
 function hideModal(sel) { $(sel).hidden = true; }
+
+/* Game Boy styled confirm() replacement -> resolves true/false */
+let _confirmRes = null;
+function resolveConfirm(v) {
+  hideModal('#confirmModal');
+  if (_confirmRes) { const r = _confirmRes; _confirmRes = null; r(v); }
+}
+function gbConfirm(message, opts = {}) {
+  $('#confirmTitle').textContent = opts.title || '! CONFIRM';
+  $('#confirmMsg').textContent = message;
+  $('#confirmYes').textContent = opts.yes || 'DELETE';
+  $('#confirmNo').textContent = opts.no || 'CANCEL';
+  showModal('#confirmModal');
+  return new Promise(res => { _confirmRes = res; });
+}
+$('#confirmYes').addEventListener('click', () => resolveConfirm(true));
+$('#confirmNo').addEventListener('click', () => resolveConfirm(false));
+$('#confirmModal').addEventListener('click', (e) => { if (e.target.id === 'confirmModal') resolveConfirm(false); });
 $$('.modal [data-close]').forEach(b =>
   b.addEventListener('click', () => b.closest('.modal').hidden = true));
 $$('.modal').forEach(m =>

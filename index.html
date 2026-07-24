@@ -87,7 +87,7 @@
   <div class="modal" id="logModal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="logTitle">
       <button class="modal-close" data-close>&times;</button>
-      <h2 id="logTitle">New Sighting</h2>
+      <h2 id="logTitle" class="sheet-title">New Sighting</h2>
       <p id="logFor" class="sci"></p>
 
       <label class="field">
@@ -140,7 +140,7 @@
   <div class="modal" id="cityModal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="cityTitle">
       <button class="modal-close" data-close>&times;</button>
-      <h2 id="cityTitle">Choose a City</h2>
+      <h2 id="cityTitle" class="sheet-title">Choose a City</h2>
       <ul id="cityList" class="city-list"></ul>
       <button id="addCityBtn" class="big-btn ghost">+ ADD A CITY</button>
     </div>
@@ -150,7 +150,7 @@
   <div class="modal" id="addCityModal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addCityTitle">
       <button class="modal-close" data-close>&times;</button>
-      <h2 id="addCityTitle">Add a City</h2>
+      <h2 id="addCityTitle" class="sheet-title">Add a City</h2>
 
       <label class="field">
         <span class="field-label">CITY NAME</span>
@@ -176,7 +176,7 @@
   <div class="modal" id="identifyModal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="idTitle">
       <button class="modal-close" data-close>&times;</button>
-      <h2 id="idTitle">Identify Sighting</h2>
+      <h2 id="idTitle" class="sheet-title">Identify Sighting</h2>
       <div class="detail-art"><div id="idArt" class="detail-silhouette"></div></div>
       <div id="idMeta" class="id-meta"></div>
       <label class="field">
@@ -185,6 +185,18 @@
       </label>
       <button id="saveId" class="big-btn">CONFIRM ID</button>
       <button id="deleteUnknown" class="big-btn ghost">DELETE SIGHTING</button>
+    </div>
+  </div>
+
+  <!-- Game Boy styled confirm dialog (replaces the browser's confirm()) -->
+  <div class="modal" id="confirmModal" hidden>
+    <div class="modal-card gb-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmMsg">
+      <h2 class="sheet-title" id="confirmTitle">! CONFIRM</h2>
+      <p id="confirmMsg" class="confirm-msg">Are you sure?</p>
+      <div class="confirm-actions">
+        <button id="confirmNo" class="big-btn ghost">CANCEL</button>
+        <button id="confirmYes" class="big-btn danger">DELETE</button>
+      </div>
     </div>
   </div>
 
