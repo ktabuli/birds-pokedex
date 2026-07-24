@@ -1,3 +1,6 @@
 node_modules/
 *.log
 .DS_Store
+
+# Generated single-file build used only for the interactive preview artifact
+birddex-preview.html
