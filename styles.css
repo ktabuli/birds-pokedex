@@ -69,6 +69,7 @@ html, body {
   box-shadow: 0 0 4px #ff5a5a88;
 }
 .brand-name { font-size: 13px; letter-spacing: 1px; color: #3a2f6d; }
+.brand-ver { font-size: 7px; color: #3a2f6d; opacity: .7; align-self: flex-start; margin-top: 1px; }
 
 .pill {
   font-family: var(--font);

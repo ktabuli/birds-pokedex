@@ -4,6 +4,10 @@
    ============================================================ */
 'use strict';
 
+/* bump this whenever we ship — it shows in the top bar so we can confirm a
+   phone actually received the latest deploy */
+const APP_VERSION = 'v0.8';
+
 /* ---------- bird silhouettes (filled shapes, colored via CSS) ---------- */
 const SHAPES = {
   songbird: `<svg viewBox="0 0 64 64"><ellipse cx="30" cy="34" rx="14" ry="11"/><circle cx="42" cy="24" r="8"/><polygon points="50,24 61,22 50,28"/><polygon points="16,30 3,19 20,41"/><rect x="26" y="44" width="2.5" height="11"/><rect x="34" y="44" width="2.5" height="11"/></svg>`,
@@ -719,6 +723,7 @@ $('#spSave').addEventListener('click', async () => {
 });
 
 async function init() {
+  $('#appVer').textContent = APP_VERSION;
   const customSpecies = await DB.getAll('species').catch(() => []);
   customSpecies.forEach(sp => { if (!window.SPECIES.find(x => x.id === sp.id)) window.SPECIES.push(sp); });
   populateSelects();
