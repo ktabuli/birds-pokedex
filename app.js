@@ -735,7 +735,19 @@ async function init() {
   render();
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    // if a controller already exists, a later controller change means a new
+    // version activated — reload once so the fresh code is shown automatically
+    if (navigator.serviceWorker.controller) {
+      let refreshed = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshed) return;
+        refreshed = true;
+        location.reload();
+      });
+    }
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => { if (reg.update) reg.update(); })
+      .catch(() => {});
   }
 }
 init();
