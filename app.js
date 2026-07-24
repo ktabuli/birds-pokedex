@@ -21,6 +21,10 @@ const shapeSVG = (s) => SHAPES[s] || SHAPES.songbird;
 
 const RARITY_ORDER = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
 
+/* pick-and-choose options for a sighting */
+const WEATHER_OPTS = ['Sunny', 'Cloudy', 'Overcast', 'Rainy', 'Snowy', 'Windy', 'Foggy'];
+const BEHAVIOUR_OPTS = ['Perched', 'Flying', 'Soaring', 'Feeding', 'Singing', 'Nesting', 'Swimming', 'Foraging'];
+
 /* ============================================================
    IndexedDB — tiny promise wrapper
    ============================================================ */
@@ -173,6 +177,7 @@ function openBird(sp) {
         <div class="when">${fmtDate(s.ts)}</div>
         ${s.cityName ? `<div class="where">@ ${esc(s.cityName)}</div>` : ''}
         ${s.geo ? `<div class="where">&#9678; ${s.geo.lat.toFixed(4)}, ${s.geo.lng.toFixed(4)}</div>` : ''}
+        ${(s.behaviour || s.weather) ? `<div class="s-tags">${[...(s.behaviour || []), ...(s.weather || [])].map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
         ${s.notes ? `<div class="note">&ldquo;${esc(s.notes)}&rdquo;</div>` : ''}
       </div>
       <button class="del" data-sid="${s.id}" title="Delete">&times;</button>
@@ -186,20 +191,42 @@ function openBird(sp) {
 
 /* ---------- log a sighting ---------- */
 function openLog(sp) {
-  state.pending = { speciesId: sp.id, photo: null, geo: null };
+  state.pending = { speciesId: sp.id, photo: null, geo: null, weather: [], behaviour: [], ts: Date.now() };
   $('#logFor').textContent = sp.name;
-  $('#photoInput').value = '';
+  $('#cameraInput').value = '';
+  $('#galleryInput').value = '';
   $('#photoPreview').hidden = true;
   $('#notesInput').value = '';
   $('#geoStatus').textContent = 'Location not added';
   $('#geoStatus').className = 'geo-status';
+  renderTagRow('#weatherTags', WEATHER_OPTS, 'weather');
+  renderTagRow('#behaviourTags', BEHAVIOUR_OPTS, 'behaviour');
+  $('#logDateTime').innerHTML = '&#9200; ' + fmtDate(state.pending.ts);
   hideModal('#birdModal');
   showModal('#logModal');
 }
 
-/* photo -> compressed dataURL */
-$('#photoInput').addEventListener('change', (e) => {
-  const file = e.target.files && e.target.files[0];
+/* render a row of toggleable tag chips into `state.pending[key]` */
+function renderTagRow(containerSel, opts, key) {
+  const box = $(containerSel);
+  box.innerHTML = '';
+  opts.forEach(opt => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tag';
+    b.textContent = opt;
+    b.addEventListener('click', () => {
+      const arr = state.pending[key];
+      const i = arr.indexOf(opt);
+      if (i >= 0) arr.splice(i, 1); else arr.push(opt);
+      b.classList.toggle('on');
+    });
+    box.appendChild(b);
+  });
+}
+
+/* photo -> compressed dataURL (shared by camera + gallery) */
+function processPhotoFile(file) {
   if (!file) return;
   const img = new Image();
   const url = URL.createObjectURL(file);
@@ -218,6 +245,18 @@ $('#photoInput').addEventListener('change', (e) => {
     $('#photoPreview').hidden = false;
   };
   img.src = url;
+}
+
+// two entry points: camera (capture) and gallery (no capture)
+$('#cameraBtn').addEventListener('click', () => $('#cameraInput').click());
+$('#galleryBtn').addEventListener('click', () => $('#galleryInput').click());
+$('#cameraInput').addEventListener('change', (e) => processPhotoFile(e.target.files && e.target.files[0]));
+$('#galleryInput').addEventListener('change', (e) => processPhotoFile(e.target.files && e.target.files[0]));
+$('#clearPhoto').addEventListener('click', () => {
+  if (state.pending) state.pending.photo = null;
+  $('#cameraInput').value = '';
+  $('#galleryInput').value = '';
+  $('#photoPreview').hidden = true;
 });
 
 /* geolocation */
@@ -243,9 +282,11 @@ $('#saveSighting').addEventListener('click', async () => {
   const sighting = {
     id: 'sg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
     speciesId: p.speciesId,
-    ts: Date.now(),                    // auto date/time
+    ts: p.ts,                          // captured when the form opened (matches what we showed)
     photo: p.photo || null,
     geo: p.geo || null,
+    weather: p.weather.length ? p.weather.slice() : null,
+    behaviour: p.behaviour.length ? p.behaviour.slice() : null,
     notes: $('#notesInput').value.trim() || null,
     cityId: state.current.id,
     cityName: state.current.name

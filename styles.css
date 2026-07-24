@@ -260,6 +260,8 @@ html, body {
 .sighting .meta { flex: 1; line-height: 1.6; }
 .sighting .meta .when { color: var(--g0); }
 .sighting .meta .where, .sighting .meta .note { color: var(--g1); margin-top: 3px; word-break: break-word; }
+.sighting .meta .s-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.sighting .meta .s-tags span { border: 1px solid var(--g1); color: var(--g0); padding: 2px 4px; font-size: 7px; }
 .sighting .del { background: none; border: none; color: var(--g1); font-family: var(--font); font-size: 12px; cursor: pointer; }
 
 /* buttons */
@@ -291,8 +293,22 @@ input[type=text], textarea, input[type=file] {
 }
 textarea { resize: vertical; }
 input[type=file] { padding: 7px; font-size: 7px; }
-.photo-preview { margin-top: 8px; }
+.photo-btns { display: flex; gap: 8px; }
+.photo-btns .mini-btn { flex: 1; }
+.photo-preview { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.photo-preview[hidden] { display: none; }  /* author display:flex would otherwise beat the hidden attribute */
 .photo-preview img { max-width: 100%; border: 2px solid var(--g0); image-rendering: auto; }
+.mini-btn.ghost-mini { background: var(--g3); color: var(--g0); }
+
+/* pick-and-choose tag chips (weather / behaviour) */
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-family: var(--font); font-size: 8px;
+  background: var(--g3); color: var(--g0);
+  border: 2px solid var(--g0); border-radius: 2px;
+  padding: 7px 8px; cursor: pointer;
+}
+.tag.on { background: var(--g0); color: var(--g3); }
 .geo-status { font-size: 8px; color: var(--g1); margin-top: 6px; }
 .geo-status.ok { color: var(--g0); }
 

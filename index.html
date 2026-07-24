@@ -86,11 +86,19 @@
       <h2 id="logTitle">New Sighting</h2>
       <p id="logFor" class="sci"></p>
 
-      <label class="field">
+      <div class="field">
         <span class="field-label">PHOTO</span>
-        <input type="file" id="photoInput" accept="image/*" capture="environment" />
-        <div id="photoPreview" class="photo-preview" hidden><img id="photoImg" alt="sighting photo preview" /></div>
-      </label>
+        <div class="photo-btns">
+          <button type="button" id="cameraBtn" class="mini-btn">&#9673; TAKE PHOTO</button>
+          <button type="button" id="galleryBtn" class="mini-btn">&#9635; FROM GALLERY</button>
+        </div>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden />
+        <input type="file" id="galleryInput" accept="image/*" hidden />
+        <div id="photoPreview" class="photo-preview" hidden>
+          <img id="photoImg" alt="sighting photo preview" />
+          <button type="button" id="clearPhoto" class="mini-btn ghost-mini">&times; REMOVE PHOTO</button>
+        </div>
+      </div>
 
       <div class="field">
         <span class="field-label">WHERE</span>
@@ -98,12 +106,22 @@
         <div id="geoStatus" class="geo-status">Location not added</div>
       </div>
 
+      <div class="field">
+        <span class="field-label">WEATHER <em>(tap any)</em></span>
+        <div class="tag-row" id="weatherTags"></div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">BEHAVIOUR <em>(tap any)</em></span>
+        <div class="tag-row" id="behaviourTags"></div>
+      </div>
+
       <label class="field">
         <span class="field-label">NOTES <em>(optional)</em></span>
-        <textarea id="notesInput" rows="2" placeholder="Behaviour, weather, anything&hellip;"></textarea>
+        <textarea id="notesInput" rows="2" placeholder="Anything else&hellip;"></textarea>
       </label>
 
-      <div class="field-label auto">&#9200; Date &amp; time added automatically</div>
+      <div class="field-label auto" id="logDateTime">&#9200; &mdash;</div>
 
       <button id="saveSighting" class="big-btn">SAVE</button>
     </div>
