@@ -54,7 +54,7 @@ const DB = (() => {
   function open() {
     if (dbp) return dbp;
     dbp = new Promise((resolve, reject) => {
-      const req = indexedDB.open('birddex', 1);
+      const req = indexedDB.open('birddex', 2);
       req.onupgradeneeded = (e) => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains('sightings')) {
@@ -66,6 +66,9 @@ const DB = (() => {
         }
         if (!db.objectStoreNames.contains('meta')) {
           db.createObjectStore('meta', { keyPath: 'k' });
+        }
+        if (!db.objectStoreNames.contains('species')) {   // v2: user-added custom birds
+          db.createObjectStore('species', { keyPath: 'id' });
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -259,38 +262,78 @@ function openBird(sp) {
         ${(s.behaviour || s.weather) ? `<div class="s-tags">${[...(s.behaviour || []), ...(s.weather || [])].map(t => `<span>${tagIcon(t)}${esc(t)}</span>`).join('')}</div>` : ''}
         ${s.notes ? `<div class="note">&ldquo;${esc(s.notes)}&rdquo;</div>` : ''}
       </div>
-      <button class="del" data-sid="${s.id}" title="Delete">&times;</button>
+      <div class="acts">
+        <button class="edit" data-sid="${s.id}" title="Edit">&#9998;</button>
+        <button class="del" data-sid="${s.id}" title="Delete">&times;</button>
+      </div>
     </div>`).join('');
   wrap.querySelectorAll('.del').forEach(b =>
     b.addEventListener('click', async () => {
       if (await gbConfirm('Delete this sighting? This cannot be undone.')) deleteSighting(b.dataset.sid, sp);
+    }));
+  wrap.querySelectorAll('.edit').forEach(b =>
+    b.addEventListener('click', () => {
+      const rec = state.sightings.find(x => x.id === b.dataset.sid);
+      if (rec) openLog(null, rec);
     }));
 
   $('#logBtn').onclick = () => openLog(sp);
   showModal('#birdModal');
 }
 
-/* ---------- log a sighting (sp = species object, or null for "not sure") ---------- */
-function openLog(sp) {
-  state.pending = { photo: null, geo: null, weather: [], behaviour: [], ts: Date.now() };
-  $('#speciesSelect').value = sp ? sp.id : '';
-  $('#logFor').textContent = sp
-    ? sp.name
-    : "Don't know it yet? Leave “Not sure” and identify it later.";
+/* format a timestamp for an <input type="datetime-local"> (local time) */
+function toLocalInput(ts) {
+  const d = new Date(ts);
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/* ---------- log a sighting ----------
+   sp       = species object to preselect (or null for "not sure")
+   existing = a saved sighting to edit (or null to create a new one)          */
+function openLog(sp, existing) {
+  const editing = !!existing;
+  state.pending = editing
+    ? { editId: existing.id, photo: existing.photo || null, geo: existing.geo || null,
+        weather: (existing.weather || []).slice(), behaviour: (existing.behaviour || []).slice(),
+        ts: existing.ts }
+    : { editId: null, photo: null, geo: null, weather: [], behaviour: [], ts: Date.now() };
+
+  $('#logTitle').textContent = editing ? 'Edit Sighting' : 'New Sighting';
+  $('#saveSighting').textContent = editing ? 'UPDATE' : 'SAVE';
+
+  const speciesId = editing ? (existing.speciesId || '') : (sp ? sp.id : '');
+  $('#speciesSelect').value = speciesId;
+  $('#speciesSelect').dataset.prev = speciesId;
+  $('#logFor').textContent = editing
+    ? 'Editing a saved sighting.'
+    : (sp ? sp.name : "Don't know it yet? Leave “Not sure” and identify it later.");
+
   $('#cameraInput').value = '';
   $('#galleryInput').value = '';
-  $('#photoPreview').hidden = true;
-  $('#notesInput').value = '';
-  $('#geoStatus').textContent = 'Location not added';
-  $('#geoStatus').className = 'geo-status';
+  if (state.pending.photo) { $('#photoImg').src = state.pending.photo; $('#photoPreview').hidden = false; }
+  else { $('#photoPreview').hidden = true; }
+
+  $('#notesInput').value = editing ? (existing.notes || '') : '';
+
+  if (state.pending.geo) {
+    $('#geoStatus').textContent = `◎ ${state.pending.geo.lat.toFixed(4)}, ${state.pending.geo.lng.toFixed(4)}`;
+    $('#geoStatus').className = 'geo-status ok';
+  } else {
+    $('#geoStatus').textContent = 'Location not added';
+    $('#geoStatus').className = 'geo-status';
+  }
+
   renderTagRow('#weatherTags', WEATHER_OPTS, 'weather');
   renderTagRow('#behaviourTags', BEHAVIOUR_OPTS, 'behaviour');
-  $('#logDateTime').innerHTML = '&#9200; ' + fmtDate(state.pending.ts);
+  $('#dateInput').value = toLocalInput(state.pending.ts);
+
   hideModal('#birdModal');
   showModal('#logModal');
 }
 
-/* render a row of toggleable tag chips into `state.pending[key]` */
+/* render a row of toggleable tag chips into `state.pending[key]`;
+   any option already in that array starts selected (for editing) */
 function renderTagRow(containerSel, opts, key) {
   const box = $(containerSel);
   box.innerHTML = '';
@@ -298,6 +341,7 @@ function renderTagRow(containerSel, opts, key) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'tag';
+    if (state.pending[key] && state.pending[key].includes(opt)) b.classList.add('on');
     b.innerHTML = tagIcon(opt) + `<span>${opt}</span>`;
     b.addEventListener('click', () => {
       const arr = state.pending[key];
@@ -359,36 +403,52 @@ $('#geoBtn').addEventListener('click', () => {
   );
 });
 
-/* save sighting */
+/* save (or update) a sighting */
 $('#saveSighting').addEventListener('click', async () => {
   const p = state.pending;
   if (!p) return;
-  const speciesId = $('#speciesSelect').value || null;   // null => unidentified
-  const sighting = {
-    id: 'sg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-    speciesId,
-    ts: p.ts,                          // captured when the form opened (matches what we showed)
+  const picked = $('#speciesSelect').value;
+  const speciesId = (picked && picked !== '__add__') ? picked : null;   // null => unidentified
+  const ts = $('#dateInput').value ? new Date($('#dateInput').value).getTime() : (p.ts || Date.now());
+  const fields = {
+    speciesId, ts,
     photo: p.photo || null,
     geo: p.geo || null,
     weather: p.weather.length ? p.weather.slice() : null,
     behaviour: p.behaviour.length ? p.behaviour.slice() : null,
-    notes: $('#notesInput').value.trim() || null,
-    cityId: state.current.id,
-    cityName: state.current.name
+    notes: $('#notesInput').value.trim() || null
   };
-  await DB.put('sightings', sighting);
-  state.sightings.push(sighting);
-  recomputeSightings();
-  hideModal('#logModal');
-  render();
-  if (!speciesId) {
-    toast('Saved to your “To ID” tray — identify it whenever.');
+
+  if (p.editId) {
+    // update an existing sighting in place
+    const s = state.sightings.find(x => x.id === p.editId);
+    if (s) { Object.assign(s, fields); await DB.put('sightings', s); }
+    recomputeSightings();
+    hideModal('#logModal');
+    render();
+    toast('Sighting updated');
   } else {
-    const sp = window.SPECIES.find(s => s.id === speciesId);
-    const first = state.tally[speciesId] === 1;
-    toast(first ? `${sp.name} added to the dex! ★` : `${sp.name} logged (x${state.tally[speciesId]})`);
+    const sighting = Object.assign({
+      id: 'sg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      cityId: state.current.id,
+      cityName: state.current.name
+    }, fields);
+    await DB.put('sightings', sighting);
+    state.sightings.push(sighting);
+    recomputeSightings();
+    hideModal('#logModal');
+    render();
+    if (!speciesId) {
+      toast('Saved to your “To ID” tray — identify it whenever.');
+    } else {
+      const sp = window.SPECIES.find(s => s.id === speciesId);
+      const first = state.tally[speciesId] === 1;
+      toast(first ? `${sp.name} added to the dex! ★` : `${sp.name} logged (x${state.tally[speciesId]})`);
+    }
   }
   state.pending = null;
+  $('#saveSighting').textContent = 'SAVE';
+  $('#logTitle').textContent = 'New Sighting';
 });
 
 async function deleteSighting(id, sp) {
@@ -414,13 +474,14 @@ function openIdentify(s) {
     ${tags.length ? `<div class="s-tags">${tags.map(t => `<span>${tagIcon(t)}${esc(t)}</span>`).join('')}</div>` : ''}
     ${s.notes ? `<div>&ldquo;${esc(s.notes)}&rdquo;</div>` : ''}`;
   $('#idSpeciesSelect').value = '';
+  $('#idSpeciesSelect').dataset.prev = '';
   showModal('#identifyModal');
 }
 
 $('#saveId').addEventListener('click', async () => {
   if (!identifyTarget) return;
   const id = $('#idSpeciesSelect').value;
-  if (!id) { toast('Pick which bird it was first'); return; }
+  if (!id || id === '__add__') { toast('Pick which bird it was first'); return; }
   identifyTarget.speciesId = id;
   await DB.put('sightings', identifyTarget);
   recomputeSightings();
@@ -600,17 +661,66 @@ function fmtDate(ts) {
 /* ============================================================
    Boot
    ============================================================ */
-/* fill the species + province dropdowns once */
+/* fill the species + province dropdowns (call again after adding a custom bird) */
 function populateSelects() {
   const byName = window.SPECIES.slice().sort((a, b) => a.name.localeCompare(b.name));
-  const opts = byName.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
-  $('#speciesSelect').innerHTML = `<option value="">Not sure yet — identify later</option>` + opts;
-  $('#idSpeciesSelect').innerHTML = `<option value="">— choose a bird —</option>` + opts;
+  const opts = byName.map(s => `<option value="${s.id}">${esc(s.name)}${s.custom ? ' *' : ''}</option>`).join('');
+  const addOpt = `<option value="__add__">+ Add a bird not listed…</option>`;
+  $('#speciesSelect').innerHTML = `<option value="">Not sure yet — identify later</option>` + opts + addOpt;
+  $('#idSpeciesSelect').innerHTML = `<option value="">— choose a bird —</option>` + opts + addOpt;
   $('#provSelect').innerHTML = window.PROVINCES
     .map(p => `<option value="${p.code}">${esc(p.name)}</option>`).join('');
+  $('#spShape').innerHTML = Object.keys(SHAPES)
+    .map(k => `<option value="${k}">${k[0].toUpperCase() + k.slice(1)}</option>`).join('');
 }
 
+/* ---------- add a custom bird (species not in the dex) ---------- */
+let addSpeciesTarget = null;   // which <select> asked for the new species
+let addSpeciesPrev = '';       // value to restore if cancelled
+function openSpeciesModal(targetSel, prevValue) {
+  addSpeciesTarget = targetSel;
+  addSpeciesPrev = prevValue || '';
+  $('#spName').value = '';
+  $('#spRarity').value = 'uncommon';
+  $('#spShape').value = 'songbird';
+  showModal('#speciesModal');
+  setTimeout(() => $('#spName').focus(), 60);
+}
+function cancelSpeciesModal() {
+  if (addSpeciesTarget) $(addSpeciesTarget).value = addSpeciesPrev;
+  hideModal('#speciesModal');
+  addSpeciesTarget = null;
+}
+function onSpeciesPick(e) {
+  const sel = e.target;
+  if (sel.value === '__add__') openSpeciesModal('#' + sel.id, sel.dataset.prev || '');
+  else sel.dataset.prev = sel.value;
+}
+$('#speciesSelect').addEventListener('change', onSpeciesPick);
+$('#idSpeciesSelect').addEventListener('change', onSpeciesPick);
+$('#speciesModal [data-close]').addEventListener('click', cancelSpeciesModal);
+$('#speciesModal').addEventListener('click', (e) => { if (e.target.id === 'speciesModal') cancelSpeciesModal(); });
+$('#spSave').addEventListener('click', async () => {
+  const name = $('#spName').value.trim();
+  if (!name) { toast('Give the bird a name'); return; }
+  const sp = {
+    id: 'sp_custom_' + Date.now().toString(36),
+    name, sci: '', rarity: $('#spRarity').value, shape: $('#spShape').value,
+    prov: [state.current.prov], habitat: state.current.habitat.slice(), custom: true
+  };
+  window.SPECIES.push(sp);
+  await DB.put('species', sp);
+  populateSelects();
+  if (addSpeciesTarget) { const t = $(addSpeciesTarget); t.value = sp.id; t.dataset.prev = sp.id; }
+  hideModal('#speciesModal');
+  addSpeciesTarget = null;
+  render();
+  toast(`${name} added to your birds ★`);
+});
+
 async function init() {
+  const customSpecies = await DB.getAll('species').catch(() => []);
+  customSpecies.forEach(sp => { if (!window.SPECIES.find(x => x.id === sp.id)) window.SPECIES.push(sp); });
   populateSelects();
   const custom = await DB.getAll('cities').catch(() => []);
   state.cities = [...window.PRESET_CITIES, ...custom];

@@ -130,7 +130,10 @@
         <textarea id="notesInput" rows="2" placeholder="Anything else&hellip;"></textarea>
       </label>
 
-      <div class="field-label auto" id="logDateTime">&#9200; &mdash;</div>
+      <label class="field">
+        <span class="field-label">&#9200; DATE &amp; TIME</span>
+        <input type="datetime-local" id="dateInput" />
+      </label>
 
       <button id="saveSighting" class="big-btn">SAVE</button>
     </div>
@@ -169,6 +172,33 @@
 
       <div id="addCityCount" class="geo-status">0 birds match</div>
       <button id="saveCity" class="big-btn">CREATE CITY</button>
+    </div>
+  </div>
+
+  <!-- Add a custom bird that isn't in the dex -->
+  <div class="modal" id="speciesModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="spTitle">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 id="spTitle" class="sheet-title">Add a Bird</h2>
+      <p class="sci">Not in the dex? Add it yourself.</p>
+      <label class="field">
+        <span class="field-label">NAME</span>
+        <input type="text" id="spName" placeholder="e.g. Barrow's Goldeneye" maxlength="40" />
+      </label>
+      <label class="field">
+        <span class="field-label">RARITY</span>
+        <select id="spRarity">
+          <option value="common">Common</option>
+          <option value="uncommon" selected>Uncommon</option>
+          <option value="rare">Rare</option>
+          <option value="legendary">Legendary</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">SILHOUETTE</span>
+        <select id="spShape"></select>
+      </label>
+      <button id="spSave" class="big-btn">ADD BIRD</button>
     </div>
   </div>
 
