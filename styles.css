@@ -293,8 +293,10 @@ html, body {
   font-size: 14px; cursor: pointer; font-family: var(--font);
 }
 .modal h2 { font-size: 12px; margin: 2px 0 10px; color: var(--g0); line-height: 1.4; }
-/* full-bleed menu header, like a Game Boy dialog title bar */
-.sheet-title {
+/* full-bleed menu header, like a Game Boy dialog title bar.
+   Scoped as `.modal .sheet-title` so it beats the `.modal h2` color rule
+   above (otherwise the title text renders dark-on-dark and disappears). */
+.modal .sheet-title {
   background: var(--g0); color: var(--g3);
   margin: -16px -16px 14px; padding: 11px 36px 11px 14px;
   border-radius: 2px 2px 0 0;

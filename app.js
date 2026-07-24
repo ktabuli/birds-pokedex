@@ -6,7 +6,7 @@
 
 /* bump this whenever we ship — it shows in the top bar so we can confirm a
    phone actually received the latest deploy */
-const APP_VERSION = 'v0.8';
+const APP_VERSION = 'v0.9';
 
 /* ---------- bird silhouettes (filled shapes, colored via CSS) ---------- */
 const SHAPES = {
