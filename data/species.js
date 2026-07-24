@@ -84,3 +84,26 @@ window.SPECIES = [
   { id: 'gyrfalcon', name: 'Gyrfalcon', sci: 'Falco rusticolus', rarity: 'legendary', shape: 'raptor', prov: ['AB','BC'], habitat: ['prairie','alpine'], blurb: 'Largest falcon; a rare winter prize.' },
   { id: 'northern-hawk-owl', name: 'Northern Hawk Owl', sci: 'Surnia ulula', rarity: 'legendary', shape: 'owl', prov: ['AB','BC'], habitat: ['boreal','forest'], blurb: 'Hunts by day from spruce tops like a falcon.' }
 ];
+
+/*
+ * Species that range across most of Canada. When the friend adds a city in a
+ * province other than AB/BC, these fill its starter dex (matched by habitat)
+ * so it's never empty. Western/regional specialties stay AB/BC-only until a
+ * province-specific list is added. Setting `wide` here keeps the data in one
+ * place instead of repeating a flag on every entry.
+ */
+window.WIDE_RANGE = [
+  'house-sparrow', 'rock-pigeon', 'american-robin', 'bc-chickadee', 'house-finch',
+  'canada-goose', 'mallard', 'european-starling', 'american-crow', 'common-raven',
+  'dark-eyed-junco', 'blue-jay', 'cedar-waxwing', 'downy-woodpecker', 'northern-flicker',
+  'red-winged-blackbird', 'american-goldfinch', 'white-breasted-nuthatch', 'yellow-warbler',
+  'song-sparrow', 'tree-swallow', 'common-goldeneye', 'bufflehead', 'ring-billed-gull',
+  'killdeer', 'great-blue-heron', 'belted-kingfisher', 'osprey', 'red-tailed-hawk',
+  'great-horned-owl', 'bald-eagle', 'pileated-woodpecker', 'barred-owl', 'pine-grosbeak',
+  'sandhill-crane', 'canada-jay', 'spruce-grouse', 'golden-eagle', 'great-gray-owl',
+  'snowy-owl', 'gyrfalcon', 'northern-hawk-owl'
+];
+window.WIDE_RANGE.forEach(id => {
+  const s = window.SPECIES.find(x => x.id === id);
+  if (s) s.wide = true;
+});

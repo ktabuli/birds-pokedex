@@ -102,19 +102,26 @@ const state = {
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-/* which species belong to a city */
+/* which species belong to a city. In AB/BC the curated province lists apply;
+   elsewhere, wide-ranging species fill the dex (matched by habitat). */
 function cityMembers(city) {
   return window.SPECIES
-    .filter(s => s.prov.includes(city.prov) && s.habitat.some(h => city.habitat.includes(h)))
+    .filter(s => (s.prov.includes(city.prov) || s.wide) && s.habitat.some(h => city.habitat.includes(h)))
     .sort((a, b) => (RARITY_ORDER[a.rarity] - RARITY_ORDER[b.rarity]) || a.name.localeCompare(b.name));
 }
 
 function recomputeSightings() {
   state.seen = new Set();
   state.tally = {};
+  state.photoBySpecies = {};   // speciesId -> most recent photo dataURL
   for (const s of state.sightings) {
+    if (!s.speciesId) continue;            // unidentified: not counted toward the dex
     state.seen.add(s.speciesId);
     state.tally[s.speciesId] = (state.tally[s.speciesId] || 0) + 1;
+    if (s.photo) {
+      const cur = state.photoBySpecies[s.speciesId];
+      if (!cur || s.ts > cur.ts) state.photoBySpecies[s.speciesId] = { url: s.photo, ts: s.ts };
+    }
   }
 }
 
@@ -124,31 +131,64 @@ function recomputeSightings() {
 function render() {
   const members = cityMembers(state.current);
   const grid = $('#grid');
-  grid.innerHTML = '';
 
   const seenCount = members.filter(s => state.seen.has(s.id)).length;
   $('#progressFill').style.width = members.length ? (seenCount / members.length * 100) + '%' : '0%';
   $('#progressText').textContent = `${seenCount} / ${members.length} spotted`;
 
+  // keep the "TO ID" chip label showing how many are waiting
+  const unknownCount = state.sightings.filter(s => !s.speciesId).length;
+  $('#unknownChip').textContent = unknownCount ? `TO ID (${unknownCount})` : 'TO ID';
+
+  if (state.filter === 'unknown') { renderUnknown(); return; }
+
+  grid.innerHTML = '';
   let list = members;
   if (state.filter === 'seen') list = members.filter(s => state.seen.has(s.id));
   else if (state.filter !== 'all') list = members.filter(s => s.rarity === state.filter);
 
   $('#emptyState').hidden = list.length !== 0;
+  $('#emptyState').textContent = 'No birds match this filter.';
 
   members.forEach((sp, i) => {
     if (!list.includes(sp)) return;
     const seen = state.seen.has(sp.id);
     const n = state.tally[sp.id] || 0;
+    const photo = state.photoBySpecies[sp.id];
     const card = document.createElement('button');
-    card.className = 'card ' + (seen ? 'seen' : 'locked');
+    card.className = 'card ' + (seen ? (photo ? 'seen' : 'seen nophoto') : 'locked');
+    const art = seen && photo
+      ? `<span class="art photo"><img src="${photo.url}" alt="" /></span>`
+      : `<span class="art">${shapeSVG(sp.shape)}</span>`;
     card.innerHTML = `
       <span class="num">#${String(i + 1).padStart(2, '0')}</span>
       ${seen && n > 0 ? `<span class="tally-badge">x${n}</span>` : ''}
-      <span class="art">${shapeSVG(sp.shape)}</span>
+      ${art}
       <span class="cname">${seen ? sp.name : '??????'}</span>
       <span class="r-dot r-${sp.rarity}" title="${sp.rarity}"></span>`;
     card.addEventListener('click', () => openBird(sp));
+    grid.appendChild(card);
+  });
+}
+
+/* the "TO ID" tray: sightings logged without a species */
+function renderUnknown() {
+  const grid = $('#grid');
+  grid.innerHTML = '';
+  const unknown = state.sightings.filter(s => !s.speciesId).sort((a, b) => b.ts - a.ts);
+  $('#emptyState').hidden = unknown.length !== 0;
+  $('#emptyState').textContent = 'Nothing to identify — every sighting has a name. ★';
+  unknown.forEach(s => {
+    const card = document.createElement('button');
+    card.className = 'card unknown';
+    const art = s.photo
+      ? `<span class="art photo"><img src="${s.photo}" alt="" /></span>`
+      : `<span class="art qmark">?</span>`;
+    card.innerHTML = `
+      ${art}
+      <span class="cname">Unidentified</span>
+      <span class="mini-date">${fmtDate(s.ts).split(' · ')[0]}</span>`;
+    card.addEventListener('click', () => openIdentify(s));
     grid.appendChild(card);
   });
 }
@@ -189,10 +229,13 @@ function openBird(sp) {
   showModal('#birdModal');
 }
 
-/* ---------- log a sighting ---------- */
+/* ---------- log a sighting (sp = species object, or null for "not sure") ---------- */
 function openLog(sp) {
-  state.pending = { speciesId: sp.id, photo: null, geo: null, weather: [], behaviour: [], ts: Date.now() };
-  $('#logFor').textContent = sp.name;
+  state.pending = { photo: null, geo: null, weather: [], behaviour: [], ts: Date.now() };
+  $('#speciesSelect').value = sp ? sp.id : '';
+  $('#logFor').textContent = sp
+    ? sp.name
+    : "Don't know it yet? Leave “Not sure” and identify it later.";
   $('#cameraInput').value = '';
   $('#galleryInput').value = '';
   $('#photoPreview').hidden = true;
@@ -279,9 +322,10 @@ $('#geoBtn').addEventListener('click', () => {
 $('#saveSighting').addEventListener('click', async () => {
   const p = state.pending;
   if (!p) return;
+  const speciesId = $('#speciesSelect').value || null;   // null => unidentified
   const sighting = {
     id: 'sg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-    speciesId: p.speciesId,
+    speciesId,
     ts: p.ts,                          // captured when the form opened (matches what we showed)
     photo: p.photo || null,
     geo: p.geo || null,
@@ -296,9 +340,13 @@ $('#saveSighting').addEventListener('click', async () => {
   recomputeSightings();
   hideModal('#logModal');
   render();
-  const sp = window.SPECIES.find(s => s.id === p.speciesId);
-  const first = state.tally[p.speciesId] === 1;
-  toast(first ? `${sp.name} added to the dex! ★` : `${sp.name} logged (x${state.tally[p.speciesId]})`);
+  if (!speciesId) {
+    toast('Saved to your “To ID” tray — identify it whenever.');
+  } else {
+    const sp = window.SPECIES.find(s => s.id === speciesId);
+    const first = state.tally[speciesId] === 1;
+    toast(first ? `${sp.name} added to the dex! ★` : `${sp.name} logged (x${state.tally[speciesId]})`);
+  }
   state.pending = null;
 });
 
@@ -309,6 +357,52 @@ async function deleteSighting(id, sp) {
   render();
   openBird(sp); // refresh detail
 }
+
+/* ---------- identify an unknown sighting ---------- */
+let identifyTarget = null;
+function openIdentify(s) {
+  identifyTarget = s;
+  $('#idArt').innerHTML = s.photo
+    ? `<img src="${s.photo}" alt="sighting" style="width:100%;height:100%;object-fit:cover;image-rendering:auto;" />`
+    : `<div style="font-size:64px;line-height:96px;text-align:center;color:var(--g0);">?</div>`;
+  const tags = [...(s.behaviour || []), ...(s.weather || [])];
+  $('#idMeta').innerHTML = `
+    <div>${fmtDate(s.ts)}</div>
+    ${s.cityName ? `<div>@ ${esc(s.cityName)}</div>` : ''}
+    ${s.geo ? `<div>&#9678; ${s.geo.lat.toFixed(4)}, ${s.geo.lng.toFixed(4)}</div>` : ''}
+    ${tags.length ? `<div class="s-tags">${tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+    ${s.notes ? `<div>&ldquo;${esc(s.notes)}&rdquo;</div>` : ''}`;
+  $('#idSpeciesSelect').value = '';
+  showModal('#identifyModal');
+}
+
+$('#saveId').addEventListener('click', async () => {
+  if (!identifyTarget) return;
+  const id = $('#idSpeciesSelect').value;
+  if (!id) { toast('Pick which bird it was first'); return; }
+  identifyTarget.speciesId = id;
+  await DB.put('sightings', identifyTarget);
+  recomputeSightings();
+  hideModal('#identifyModal');
+  render();
+  const sp = window.SPECIES.find(s => s.id === id);
+  toast(`Identified as ${sp.name}! ★`);
+  identifyTarget = null;
+});
+
+$('#deleteUnknown').addEventListener('click', async () => {
+  if (!identifyTarget) return;
+  if (!confirm('Delete this sighting for good?')) return;
+  await DB.del('sightings', identifyTarget.id);
+  state.sightings = state.sightings.filter(x => x.id !== identifyTarget.id);
+  recomputeSightings();
+  hideModal('#identifyModal');
+  render();
+  identifyTarget = null;
+});
+
+// primary entry point — log a bird without knowing the species yet
+$('#newSightingBtn').addEventListener('click', () => openLog(null));
 
 /* ============================================================
    City picker + add city
@@ -376,18 +470,15 @@ function updateAddCityCount() {
   $('#addCityCount').textContent = `${n} bird${n === 1 ? '' : 's'} match`;
 }
 
-$('#provSeg').addEventListener('click', (e) => {
-  const btn = e.target.closest('.seg-btn');
-  if (!btn) return;
-  addProv = btn.dataset.prov;
-  $$('#provSeg .seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+$('#provSelect').addEventListener('change', (e) => {
+  addProv = e.target.value;
   updateAddCityCount();
 });
 
 $('#addCityBtn').addEventListener('click', () => {
   $('#newCityName').value = '';
   addProv = 'AB';
-  $$('#provSeg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.prov === 'AB'));
+  $('#provSelect').value = 'AB';
   buildHabitatChecks();
   updateAddCityCount();
   hideModal('#cityModal');
@@ -450,7 +541,18 @@ function fmtDate(ts) {
 /* ============================================================
    Boot
    ============================================================ */
+/* fill the species + province dropdowns once */
+function populateSelects() {
+  const byName = window.SPECIES.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const opts = byName.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  $('#speciesSelect').innerHTML = `<option value="">Not sure yet — identify later</option>` + opts;
+  $('#idSpeciesSelect').innerHTML = `<option value="">— choose a bird —</option>` + opts;
+  $('#provSelect').innerHTML = window.PROVINCES
+    .map(p => `<option value="${p.code}">${esc(p.name)}</option>`).join('');
+}
+
 async function init() {
+  populateSelects();
   const custom = await DB.getAll('cities').catch(() => []);
   state.cities = [...window.PRESET_CITIES, ...custom];
 

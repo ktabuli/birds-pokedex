@@ -32,6 +32,9 @@
       <div id="progressText">0 / 0 spotted</div>
     </div>
 
+    <!-- Primary action: log a bird even if you don't know what it is -->
+    <button id="newSightingBtn" class="log-cta">+ LOG A BIRD YOU SAW</button>
+
     <!-- Rarity filter chips -->
     <nav id="filters" aria-label="Filter by rarity">
       <button class="chip active" data-filter="all">ALL</button>
@@ -40,6 +43,7 @@
       <button class="chip" data-filter="rare">RARE</button>
       <button class="chip" data-filter="legendary">LEGENDARY</button>
       <button class="chip" data-filter="seen">SPOTTED</button>
+      <button class="chip" data-filter="unknown" id="unknownChip">TO ID</button>
     </nav>
 
     <!-- The dex grid -->
@@ -85,6 +89,11 @@
       <button class="modal-close" data-close>&times;</button>
       <h2 id="logTitle">New Sighting</h2>
       <p id="logFor" class="sci"></p>
+
+      <label class="field">
+        <span class="field-label">WHICH BIRD?</span>
+        <select id="speciesSelect"></select>
+      </label>
 
       <div class="field">
         <span class="field-label">PHOTO</span>
@@ -148,13 +157,10 @@
         <input type="text" id="newCityName" placeholder="e.g. Kelowna" maxlength="40" />
       </label>
 
-      <div class="field">
-        <span class="field-label">PROVINCE</span>
-        <div class="seg" id="provSeg">
-          <button type="button" class="seg-btn active" data-prov="AB">ALBERTA</button>
-          <button type="button" class="seg-btn" data-prov="BC">BRITISH COLUMBIA</button>
-        </div>
-      </div>
+      <label class="field">
+        <span class="field-label">PROVINCE / TERRITORY</span>
+        <select id="provSelect"></select>
+      </label>
 
       <div class="field">
         <span class="field-label">HABITATS <em>(pick any)</em></span>
@@ -163,6 +169,22 @@
 
       <div id="addCityCount" class="geo-status">0 birds match</div>
       <button id="saveCity" class="big-btn">CREATE CITY</button>
+    </div>
+  </div>
+
+  <!-- Identify an unknown sighting -->
+  <div class="modal" id="identifyModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="idTitle">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 id="idTitle">Identify Sighting</h2>
+      <div class="detail-art"><div id="idArt" class="detail-silhouette"></div></div>
+      <div id="idMeta" class="id-meta"></div>
+      <label class="field">
+        <span class="field-label">IT WAS A&hellip;</span>
+        <select id="idSpeciesSelect"></select>
+      </label>
+      <button id="saveId" class="big-btn">CONFIRM ID</button>
+      <button id="deleteUnknown" class="big-btn ghost">DELETE SIGHTING</button>
     </div>
   </div>
 

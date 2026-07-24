@@ -17,6 +17,25 @@ window.PRESET_CITIES = [
   { id: 'vancouver',  name: 'Vancouver',  prov: 'BC', habitat: ['urban','parkland','forest','river','wetland'] }
 ];
 
+// All Canadian provinces & territories, offered when adding a custom city.
+// (Preset cities are AB/BC; other provinces are populated by wide-ranging
+//  species — see WIDE_RANGE in species.js.)
+window.PROVINCES = [
+  { code: 'AB', name: 'Alberta' },
+  { code: 'BC', name: 'British Columbia' },
+  { code: 'SK', name: 'Saskatchewan' },
+  { code: 'MB', name: 'Manitoba' },
+  { code: 'ON', name: 'Ontario' },
+  { code: 'QC', name: 'Quebec' },
+  { code: 'NB', name: 'New Brunswick' },
+  { code: 'NS', name: 'Nova Scotia' },
+  { code: 'PE', name: 'Prince Edward Island' },
+  { code: 'NL', name: 'Newfoundland & Labrador' },
+  { code: 'YT', name: 'Yukon' },
+  { code: 'NT', name: 'Northwest Territories' },
+  { code: 'NU', name: 'Nunavut' }
+];
+
 // Habitat options offered when the friend adds a custom city.
 window.HABITAT_OPTIONS = [
   { id: 'urban',    label: 'Urban / city' },
