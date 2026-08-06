@@ -384,6 +384,19 @@ html, body {
   color: var(--g3); border-color: var(--g0);
 }
 
+/* first-run intro / how-it-works */
+.intro-card { text-align: center; }
+.intro-art { width: 92px; height: 92px; margin: 4px auto 12px; }
+.intro-art svg { width: 100%; height: 100%; fill: var(--g0); }
+.intro-art .q-mark { font-size: 66px; line-height: 92px; color: var(--g0); font-family: var(--font); }
+.modal .intro-title { font-size: 12px; margin: 0 0 8px; text-align: center; color: var(--g0); }
+.intro-body { font-size: 9px; line-height: 1.85; color: var(--g0); margin: 0 4px 14px; min-height: 56px; }
+.intro-dots { display: flex; justify-content: center; gap: 7px; margin-bottom: 14px; }
+.intro-dots .dot { width: 7px; height: 7px; border: 2px solid var(--g0); border-radius: 50%; }
+.intro-dots .dot.on { background: var(--g0); }
+.intro-nav { display: flex; gap: 10px; }
+.intro-nav .big-btn { flex: 1; width: auto; margin: 0; }
+
 /* menu / backup dialog */
 .menu-note { font-size: 8px; line-height: 1.7; color: var(--g1); margin: 12px 2px 8px; }
 .menu-meta { font-size: 8px; color: var(--g1); text-align: center; margin-top: 6px; }

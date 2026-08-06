@@ -191,11 +191,26 @@
     </div>
   </div>
 
+  <!-- First-run intro / how-it-works refresher -->
+  <div class="modal" id="introModal" hidden>
+    <div class="modal-card gb-dialog intro-card" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+      <div class="intro-art" id="introArt"></div>
+      <h2 id="introTitle" class="intro-title">Welcome</h2>
+      <p id="introBody" class="intro-body"></p>
+      <div class="intro-dots" id="introDots"></div>
+      <div class="intro-nav">
+        <button id="introBack" class="big-btn ghost">SKIP</button>
+        <button id="introNext" class="big-btn">NEXT</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Menu: backup / restore -->
   <div class="modal" id="menuModal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
       <button class="modal-close" data-close>&times;</button>
       <h2 id="menuTitle" class="sheet-title">Menu</h2>
+      <button id="howBtn" class="big-btn ghost">? HOW IT WORKS</button>
       <button id="exportBtn" class="big-btn">&#8681; BACK UP MY BIRDS</button>
       <button id="importBtn" class="big-btn ghost">&#8679; RESTORE FROM BACKUP</button>
       <input type="file" id="importInput" accept="application/json,.json" hidden />

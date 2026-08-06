@@ -6,7 +6,7 @@
 
 /* bump this whenever we ship — it shows in the top bar so we can confirm a
    phone actually received the latest deploy */
-const APP_VERSION = 'v0.10';
+const APP_VERSION = 'v0.11';
 
 /* ---------- bird silhouettes (filled shapes, colored via CSS) ---------- */
 const SHAPES = {
@@ -700,6 +700,38 @@ async function importData(file) {
   toast(`Restored — ${added} new sighting${added === 1 ? '' : 's'} added`);
 }
 
+/* ---------- first-run intro / how-it-works ---------- */
+const CAMERA_ART = '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="2"/><rect x="8" y="4" width="7" height="4" rx="1"/><circle cx="12" cy="13.5" r="4.6" fill="#9bbc0f"/><circle cx="12" cy="13.5" r="2.4"/><rect x="17" y="9.2" width="2.6" height="2" rx="1" fill="#9bbc0f"/></svg>';
+const STAR_ART = '<svg viewBox="0 0 24 24"><polygon points="12,2 14.7,8.9 22,9.2 16.3,13.8 18.2,21 12,16.7 5.8,21 7.7,13.8 2,9.2 9.3,8.9"/></svg>';
+const INTRO = [
+  { art: SHAPES.songbird, title: 'Welcome to BirdDex', body: 'A Game Boy–style field journal for the real birds around you. Spot them to fill in your dex.' },
+  { art: CAMERA_ART, title: 'Log what you see', body: 'Tap <b>+ Log a bird you saw</b>, snap a photo, and tag the weather &amp; spot. The date &amp; time are added for you.' },
+  { art: '<div class="q-mark">?</div>', title: "Don't know the bird?", body: 'Leave it on <b>“Not sure yet.”</b> It waits in the <b>TO ID</b> tray until you figure it out later.' },
+  { art: STAR_ART, title: 'Fill your dex', body: 'Silhouettes reveal as you spot them — chase the Rare &amp; Legendary. Switch or add cities up top, and back up your birds in the ☰ menu.' }
+];
+let introIdx = 0;
+function renderSlide() {
+  const s = INTRO[introIdx];
+  $('#introArt').innerHTML = s.art;
+  $('#introTitle').textContent = s.title;
+  $('#introBody').innerHTML = s.body;
+  $('#introDots').innerHTML = INTRO.map((_, i) => `<span class="dot${i === introIdx ? ' on' : ''}"></span>`).join('');
+  $('#introBack').textContent = introIdx === 0 ? 'SKIP' : 'BACK';
+  $('#introNext').textContent = introIdx === INTRO.length - 1 ? 'START!' : 'NEXT';
+}
+function openIntro() { introIdx = 0; renderSlide(); showModal('#introModal'); }
+async function finishIntro() {
+  hideModal('#introModal');
+  await DB.put('meta', { k: 'seenIntro', v: true }).catch(() => {});
+}
+$('#introNext').addEventListener('click', () => {
+  if (introIdx < INTRO.length - 1) { introIdx++; renderSlide(); } else finishIntro();
+});
+$('#introBack').addEventListener('click', () => {
+  if (introIdx === 0) finishIntro(); else { introIdx--; renderSlide(); }
+});
+$('#howBtn').addEventListener('click', () => { hideModal('#menuModal'); openIntro(); });
+
 $('#exportBtn').addEventListener('click', exportData);
 $('#importBtn').addEventListener('click', () => $('#importInput').click());
 $('#importInput').addEventListener('change', (e) => {
@@ -809,6 +841,10 @@ async function init() {
   state.sightings = await DB.getAll('sightings').catch(() => []);
   recomputeSightings();
   render();
+
+  // show the intro the first time only
+  const introSeen = await DB.get('meta', 'seenIntro').catch(() => null);
+  if (!introSeen || !introSeen.v) openIntro();
 
   if ('serviceWorker' in navigator) {
     // if a controller already exists, a later controller change means a new
